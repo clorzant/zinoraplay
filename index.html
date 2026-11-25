@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- QUICKTAP v1.1: results screen now shows fastest and slowest times alongside the average -->
+<!-- QUICKTAP v1.2.1: Back button navigation fixed (history-state routing). v1.2: game hub homepage (Reaction Test, Memory Match and Number Merge cards). v1.1 added fastest and slowest times to the results screen -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -61,6 +61,32 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
 .btn.ghost{background:transparent;color:var(--text);box-shadow:none;border:1.5px solid var(--line);min-height:52px;font-size:17px;margin-top:12px}
 .how{margin:22px 0 0;font-size:14px;color:var(--muted);max-width:280px;line-height:1.5}
 
+/* hub */
+#hub{justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:76px;text-align:left}
+.hub-head{width:100%;max-width:420px}
+.hub-head .tag{margin-top:10px}
+.cards{display:flex;flex-direction:column;gap:14px;width:100%;max-width:420px;margin-top:26px;padding-bottom:32px}
+.card{display:grid;grid-template-columns:56px 1fr;gap:12px 14px;align-items:center;padding:16px;border-radius:20px;
+  background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
+.card h2{margin:0;font-size:20px;font-weight:700;letter-spacing:-.02em}
+.card p{margin:4px 0 0;font-size:14px;line-height:1.4;color:var(--muted)}
+.card .meta{display:block;margin-top:8px;font-size:13px;color:var(--muted)}
+.card .meta b{color:var(--text);margin-left:4px}
+.card .btn.play{grid-column:1/-1;max-width:none;min-height:50px;font-size:18px;border-radius:14px}
+.card.soon{box-shadow:none;background:transparent;border-style:dashed}
+.card.soon h2,.card.soon .ico{opacity:.6}
+.pill{display:inline-block;margin-top:8px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);font-size:12px;font-weight:600;color:var(--muted)}
+.ico{width:56px;height:56px;border-radius:16px;border:1px solid var(--line);background:var(--bg);display:grid;place-items:center}
+.ico-react::before{content:"";width:26px;height:26px;border-radius:50%;background:var(--go);box-shadow:0 0 0 5px var(--bg),0 0 0 8px var(--accent)}
+.ico-mem{grid-template-columns:repeat(2,14px);grid-auto-rows:14px;gap:4px;align-content:center;justify-content:center}
+.ico-mem i{border-radius:4px;background:var(--line)}
+.ico-mem i:nth-child(1),.ico-mem i:nth-child(4){background:var(--accent)}
+.ico-num{font-size:17px;font-weight:800;letter-spacing:-.04em;color:var(--accent)}
+.back{position:absolute;top:16px;left:16px;width:44px;height:44px;border-radius:50%;background:var(--surface);
+  box-shadow:var(--shadow);display:grid;place-items:center;z-index:5}
+.back svg{width:22px;height:22px}
+.h1-sm{font-size:clamp(34px,11vw,54px)}
+
 /* game stage */
 #game{padding:0;max-width:none;background:var(--wait);color:var(--on-state);transition:background .15s;cursor:pointer}
 #game.go{background:var(--go)}
@@ -112,9 +138,46 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 100 20V2z"/><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.6" style="stroke:var(--text)"/></svg>
   </button>
 
-  <section id="home" class="screen on">
+  <section id="hub" class="screen on">
+    <header class="hub-head">
+      <h1>QUICKTAP</h1>
+      <p class="tag">A tiny arcade of quick games. Pick one and play.</p>
+    </header>
+    <div class="cards">
+      <article class="card">
+        <div class="ico ico-react" aria-hidden="true"></div>
+        <div class="card-body">
+          <h2>Reaction Test</h2>
+          <p>Tap the moment the screen turns green. Five rounds, one average.</p>
+          <span class="meta">Personal best <b id="bestHub">--</b></span>
+        </div>
+        <button class="btn play" id="playReaction" type="button">Play</button>
+      </article>
+      <article class="card soon" aria-label="Memory Match, coming soon">
+        <div class="ico ico-mem" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div class="card-body">
+          <h2>Memory Match</h2>
+          <p>Flip the cards and find every pair.</p>
+          <span class="pill">Coming soon</span>
+        </div>
+      </article>
+      <article class="card soon" aria-label="Number Merge, coming soon">
+        <div class="ico ico-num" aria-hidden="true">2+2</div>
+        <div class="card-body">
+          <h2>Number Merge</h2>
+          <p>Slide and combine tiles to reach a higher number.</p>
+          <span class="pill">Coming soon</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="home" class="screen">
+    <button class="back" id="back" type="button" aria-label="Back to all games">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4.5L8 12l7.5 7.5" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="stroke:var(--text)"/></svg>
+    </button>
     <div class="mark" aria-hidden="true"></div>
-    <h1>QUICKTAP</h1>
+    <h1 class="h1-sm">Reaction Test</h1>
     <p class="tag">How fast are your reflexes? Five rounds will tell.</p>
     <div class="best">Personal best<b id="bestHome">--</b></div>
     <button class="btn" id="start" type="button">Start</button>
@@ -147,7 +210,7 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
     </div>
     <ul class="list" id="fList"></ul>
     <button class="btn" id="again" type="button">Play again</button>
-    <button class="btn ghost" id="toHome" type="button">Home</button>
+    <button class="btn ghost" id="toHome" type="button">All games</button>
   </section>
 </div>
 
@@ -167,13 +230,13 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
   /* ---------- Helpers ---------- */
   var $ = function (id) { return document.getElementById(id); };
   var els = {
-    home: $("home"), game: $("game"), result: $("result"), final: $("final"),
-    bestHome: $("bestHome"), gBig: $("gBig"), gSub: $("gSub"), roundLabel: $("roundLabel"), dots: $("dots"),
+    hub: $("hub"), home: $("home"), game: $("game"), result: $("result"), final: $("final"),
+    bestHome: $("bestHome"), bestHub: $("bestHub"), gBig: $("gBig"), gSub: $("gSub"), roundLabel: $("roundLabel"), dots: $("dots"),
     rLabel: $("rLabel"), rMs: $("rMs"), rVerdict: $("rVerdict"), chips: $("chips"), next: $("next"),
     fAvg: $("fAvg"), fFast: $("fFast"), fSlow: $("fSlow"), fBadge: $("fBadge"), fList: $("fList")
   };
   function show(name) {
-    ["home", "game", "result", "final"].forEach(function (n) { els[n].classList.toggle("on", n === name); });
+    ["hub", "home", "game", "result", "final"].forEach(function (n) { els[n].classList.toggle("on", n === name); });
   }
   function verdict(ms) {
     if (ms < 200) return "Lightning fast";
@@ -195,7 +258,10 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
 
   /* ---------- Personal best ---------- */
   function getBest() { var v = parseInt(store.get(CONFIG.bestKey), 10); return isNaN(v) ? null : v; }
-  function renderBest() { var b = getBest(); els.bestHome.textContent = b === null ? "--" : b + " ms"; }
+  function renderBest() {
+    var b = getBest(), t = b === null ? "--" : b + " ms";
+    els.bestHome.textContent = t; els.bestHub.textContent = t;
+  }
 
   /* ---------- Game state ---------- */
   var state = { phase: "home", round: 0, times: [], timer: null, goAt: 0 };
@@ -209,6 +275,7 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
   function newGame() { state.round = 0; state.times = []; nextRound(); }
 
   function nextRound() {
+    if (view !== "reaction") return;
     clearTimeout(state.timer);
     state.phase = "waiting";
     els.game.className = "screen on";
@@ -291,7 +358,41 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
   });
   $("start").addEventListener("click", newGame);
   $("again").addEventListener("click", newGame);
-  $("toHome").addEventListener("click", function () { state.phase = "home"; renderBest(); show("home"); });
+  /* ---------- Navigation ----------
+     Two views: "hub" (no hash or #hub) and "reaction" (#reaction).
+     Every Reaction Test screen (intro, round, result, final) shares ONE history entry,
+     so Back from any of them lands on the hub. Play pushes exactly one entry; leaving
+     either undoes that entry (history.back) or replaces it, so entries never pile up. */
+  var view = "";
+  function targetView() { return window.location.hash === "#reaction" ? "reaction" : "hub"; }
+  function applyView(force) {
+    var next = targetView();
+    if (next === view && !force) return;      /* idempotent: popstate + hashchange may both fire */
+    view = next;
+    clearTimeout(state.timer);                /* Back mid-round cancels the pending green signal */
+    state.phase = "home";
+    renderBest();
+    show(view === "reaction" ? "home" : "hub");
+  }
+  function openReaction() {
+    if (view === "reaction") return;          /* ignore double taps */
+    try { window.history.pushState({ qt: "reaction" }, "", "#reaction"); applyView(); }
+    catch (e) { window.location.hash = "#reaction"; }
+  }
+  function goHub() {
+    if (view !== "reaction") return;
+    if (window.history.state && window.history.state.qt === "reaction") {
+      window.history.back();                  /* undo our own push; popstate shows the hub */
+    } else {                                  /* opened directly on #reaction: no hub entry behind it */
+      try { window.history.replaceState({ qt: "hub" }, "", "#hub"); applyView(); }
+      catch (e) { window.location.replace("#hub"); }
+    }
+  }
+  window.addEventListener("popstate", function () { applyView(); });
+  window.addEventListener("hashchange", function () { applyView(); });
+  $("playReaction").addEventListener("click", openReaction);
+  $("back").addEventListener("click", goHub);
+  $("toHome").addEventListener("click", goHub);
   els.next.addEventListener("click", function () {
     if (state.round >= CONFIG.rounds) showFinal(); else nextRound();
   });
@@ -299,7 +400,7 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
     if (document.hidden && state.phase === "waiting") nextRound();
   });
 
-  renderBest();
+  applyView(true);
 })();
 </script>
 </body>
