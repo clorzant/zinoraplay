@@ -1,176 +1,374 @@
 <!DOCTYPE html>
-<!-- QUICKTAP v1.2.1: Back button navigation fixed (history-state routing). v1.2: game hub homepage (Reaction Test, Memory Match and Number Merge cards). v1.1 added fastest and slowest times to the results screen -->
+<!-- ZINORAPLAY v3.0: platform redesign (new shell, tabbed navigation, game library, records, achievements; game logic and storage keys unchanged). v2.2: full visual redesign (CSS and markup polish only; gameplay and storage unchanged). v2.1: Reaction Rush mode added. v2.0 (formerly QUICKTAP). Storage keys keep the "quicktap:" prefix so existing records survive. v1.3: Memory Match added (4x4, 8 pairs, moves, timer, personal best). v1.2.1: Back button navigation fixed (history-state routing). v1.2: game hub homepage (Reaction Test, Memory Match and Number Merge cards). v1.1 added fastest and slowest times to the results screen -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f1222">
-<title>QUICKTAP</title>
+<meta name="theme-color" content="#0a0b0e">
+<title>ZINORAPLAY</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+/* ZINORAPLAY visual system: charcoal surfaces, electric lime accent, restrained violet and blue.
+   Two deliberately designed themes (light = warm paper + deep olive ink, dark = near-black + lime). */
 :root{
-  --bg:#f4f2fb;--surface:#fff;--line:#e1ddf0;--text:#14142b;--muted:#6b6985;
-  --accent:#5b45f0;--on-accent:#fff;--wait:#e5484d;--go:#12b76a;--warn:#f08a24;--on-state:#fff;
-  --shadow:0 10px 30px rgba(60,40,140,.12);
+  --bg:#eceee9;--surface:#fbfbf9;--surface2:#f1f3ee;--line:#d3d8cf;--text:#0f1210;--muted:#4f5851;
+  --accent:#b6e11b;--on-accent:#0d1100;--ink:#3a5200;--violet:#5b3df0;--blue:#1d63d8;
+  --grid:rgba(15,18,16,.05);--g1:rgba(182,225,27,.3);--g2:rgba(91,61,240,.12);
+  --shadow:0 1px 0 #fff inset,0 10px 26px -14px rgba(25,35,15,.35);
+  --wait:#c02a38;--on-wait:#fff;--go:#2bd576;--on-go:#04180c;--warn:#f5a524;--on-warn:#1c1200;--dec:#2563eb;--on-dec:#fff;
   box-sizing:border-box;color-scheme:light;
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg:#0f1222;--surface:#181c33;--line:#272c4d;--text:#f2f1ff;--muted:#9a9cc0;
-    --accent:#8b7bff;--on-accent:#0f1222;--wait:#d93a4a;--go:#19c37d;--shadow:0 10px 30px rgba(0,0,0,.4);color-scheme:dark;
+    --bg:#0a0b0e;--surface:#12141a;--surface2:#181b23;--line:#252a37;--text:#eef0f4;--muted:#8f97a8;
+    --accent:#c6f432;--on-accent:#0a0d00;--ink:#c6f432;--violet:#9b8cff;--blue:#5aa9ff;
+    --grid:rgba(255,255,255,.035);--g1:rgba(198,244,50,.12);--g2:rgba(139,123,255,.16);
+    --shadow:0 1px 0 rgba(255,255,255,.05) inset,0 14px 30px -16px rgba(0,0,0,.9);color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0f1222;--surface:#181c33;--line:#272c4d;--text:#f2f1ff;--muted:#9a9cc0;
-  --accent:#8b7bff;--on-accent:#0f1222;--wait:#d93a4a;--go:#19c37d;--shadow:0 10px 30px rgba(0,0,0,.4);color-scheme:dark;
+  --bg:#0a0b0e;--surface:#12141a;--surface2:#181b23;--line:#252a37;--text:#eef0f4;--muted:#8f97a8;
+  --accent:#c6f432;--on-accent:#0a0d00;--ink:#c6f432;--violet:#9b8cff;--blue:#5aa9ff;
+  --grid:rgba(255,255,255,.035);--g1:rgba(198,244,50,.12);--g2:rgba(139,123,255,.16);
+  --shadow:0 1px 0 rgba(255,255,255,.05) inset,0 14px 30px -16px rgba(0,0,0,.9);color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
-body{margin:0;height:100%;background:var(--bg);color:var(--text);
-  font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:background .3s,color .3s}
-button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulation}
-button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
-#app{position:relative;height:100%;max-width:520px;margin:0 auto}
-.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
-  padding:24px 22px;text-align:center}
+body{margin:0;height:100%;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none;
+  background-color:var(--bg);color:var(--text);
+  background-image:radial-gradient(ellipse at 0% 0%,var(--g1),transparent 55%),radial-gradient(ellipse at 100% 100%,var(--g2),transparent 55%),
+    linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:auto,auto,32px 32px,32px 32px;
+  font-family:"Space Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;transition:background-color .3s,color .3s}
+button{font:inherit;color:inherit;border:0;padding:0;background:none;cursor:pointer;touch-action:manipulation}
+button:focus-visible{outline:2px solid var(--violet);outline-offset:3px}
+#app{position:relative;height:100%}
+.screen{position:absolute;top:0;right:0;bottom:0;left:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px;text-align:center}
 .screen.on{display:flex;animation:in .4s cubic-bezier(.2,.8,.2,1)}
-@keyframes in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+@keyframes ring{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.5);opacity:0}}
+@keyframes pop{from{transform:scale(.72)}to{transform:scale(1)}}
+@keyframes breathe{50%{opacity:.72}}
+@keyframes flip{from{transform:scaleX(.1)}to{transform:none}}
+@keyframes fall{to{transform:translate(var(--x),105vh) rotate(var(--r))}}
+@keyframes hue{to{filter:hue-rotate(360deg)}}
+@keyframes bob{50%{transform:translateY(-3px)}}
+@keyframes scan{50%{transform:scale(1.1);opacity:.4}}
+@keyframes burst{from{transform:scale(.6);opacity:.7}to{transform:scale(1.6);opacity:0}}
+@keyframes sheen{from{transform:translateX(-120%)}to{transform:translateX(360%)}}
 
-/* theme toggle */
-#theme{position:absolute;top:16px;right:16px;width:44px;height:44px;border-radius:50%;background:var(--surface);
-  box-shadow:var(--shadow);display:grid;place-items:center;z-index:5}
-#theme svg{width:20px;height:20px;fill:var(--text)}
+/* corner controls */
+#theme,#snd,.back{position:absolute;top:14px;width:44px;height:44px;border-radius:12px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);display:grid;place-items:center;z-index:5}
+#theme{right:14px}#snd{right:66px}.back{left:14px}
+#theme svg,#snd svg{width:19px;height:19px}#theme svg{fill:var(--text)}.back svg{width:20px;height:20px}
+#snd .w{display:none}#snd.on .w{display:inline}#snd.on .x{display:none}#snd.on{border-color:var(--ink)}
 
-/* home */
-.mark{width:92px;height:92px;border-radius:50%;border:6px solid var(--accent);display:grid;place-items:center;margin-bottom:26px;position:relative}
-.mark::before{content:"";width:34px;height:34px;border-radius:50%;background:var(--go);animation:beat 2.2s ease-in-out infinite}
-.mark::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--accent);opacity:0;animation:ring 2.2s ease-out infinite}
-@keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
-@keyframes ring{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.7);opacity:0}}
-h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04em;line-height:.95}
-.tag{margin:14px 0 0;color:var(--muted);font-size:18px;line-height:1.4;max-width:300px}
-.best{margin:30px 0 8px;padding:12px 22px;border-radius:999px;background:var(--surface);border:1px solid var(--line);
-  font-size:15px;color:var(--muted)}
-.best b{color:var(--text);font-size:18px;margin-left:6px}
-.btn{display:block;width:100%;max-width:320px;min-height:58px;border-radius:18px;background:var(--accent);color:var(--on-accent);
-  font-size:20px;font-weight:700;box-shadow:0 12px 26px -8px var(--accent);transition:transform .12s}
-.btn:active{transform:scale(.96)}
-.btn.ghost{background:transparent;color:var(--text);box-shadow:none;border:1.5px solid var(--line);min-height:52px;font-size:17px;margin-top:12px}
-.how{margin:22px 0 0;font-size:14px;color:var(--muted);max-width:280px;line-height:1.5}
+/* type and buttons */
+h1{margin:0;font-weight:700;line-height:1}
+.tag{margin:14px 0 0;max-width:300px;font-size:15px;line-height:1.5;color:var(--muted)}
+.btn{display:block;width:100%;max-width:340px;min-height:54px;border-radius:12px;font-size:16px;font-weight:700;letter-spacing:.02em;
+  color:var(--on-accent);background:linear-gradient(180deg,#d7fb4c,#b2e41a);
+  box-shadow:0 1px 0 rgba(255,255,255,.55) inset,0 8px 22px -8px rgba(182,225,27,.55);transition:transform .12s,filter .15s}
+.btn:active{transform:translateY(1px) scale(.985);filter:brightness(.95)}
+.btn.ghost{min-height:50px;margin-top:10px;font-weight:600;color:var(--text);background:transparent;border:1px solid var(--line);box-shadow:none}
+.btn.rush{margin-top:10px;color:var(--text);border:1px solid rgba(139,123,255,.6);box-shadow:none;
+  background:linear-gradient(180deg,rgba(139,123,255,.2),rgba(139,123,255,.05)),var(--surface)}
 
 /* hub */
-#hub{justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:76px;text-align:left}
-.hub-head{width:100%;max-width:420px}
-.hub-head .tag{margin-top:10px}
-.cards{display:flex;flex-direction:column;gap:14px;width:100%;max-width:420px;margin-top:26px;padding-bottom:32px}
-.card{display:grid;grid-template-columns:56px 1fr;gap:12px 14px;align-items:center;padding:16px;border-radius:20px;
-  background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
-.card h2{margin:0;font-size:20px;font-weight:700;letter-spacing:-.02em}
-.card p{margin:4px 0 0;font-size:14px;line-height:1.4;color:var(--muted)}
-.card .meta{display:block;margin-top:8px;font-size:13px;color:var(--muted)}
-.card .meta b{color:var(--text);margin-left:4px}
-.card .btn.play{grid-column:1/-1;max-width:none;min-height:50px;font-size:18px;border-radius:14px}
-.card.soon{box-shadow:none;background:transparent;border-style:dashed}
-.card.soon h2,.card.soon .ico{opacity:.6}
-.pill{display:inline-block;margin-top:8px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);font-size:12px;font-weight:600;color:var(--muted)}
-.ico{width:56px;height:56px;border-radius:16px;border:1px solid var(--line);background:var(--bg);display:grid;place-items:center}
-.ico-react::before{content:"";width:26px;height:26px;border-radius:50%;background:var(--go);box-shadow:0 0 0 5px var(--bg),0 0 0 8px var(--accent)}
-.ico-mem{grid-template-columns:repeat(2,14px);grid-auto-rows:14px;gap:4px;align-content:center;justify-content:center}
-.ico-mem i{border-radius:4px;background:var(--line)}
-.ico-mem i:nth-child(1),.ico-mem i:nth-child(4){background:var(--accent)}
-.ico-num{font-size:17px;font-weight:800;letter-spacing:-.04em;color:var(--accent)}
-.back{position:absolute;top:16px;left:16px;width:44px;height:44px;border-radius:50%;background:var(--surface);
-  box-shadow:var(--shadow);display:grid;place-items:center;z-index:5}
-.back svg{width:22px;height:22px}
-.h1-sm{font-size:clamp(34px,11vw,54px)}
+#hub{justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:78px;text-align:left}
+.hub-head{width:100%;max-width:440px}
+.brand{display:flex;align-items:center}
+.brand h1{font-size:30px;font-size:clamp(23px,7.2vw,38px);letter-spacing:.06em}
+.brand h1 b{color:var(--ink);font-weight:700}
+.orb{position:relative;flex:none;width:34px;height:34px;margin-right:12px;border-radius:9px;cursor:pointer;
+  background:linear-gradient(145deg,#e6ff6c,#a8da0e);box-shadow:0 0 0 1px rgba(0,0,0,.22) inset,0 6px 20px -4px rgba(182,225,27,.65)}
+.orb::before{content:"";position:absolute;top:9px;left:13px;border-style:solid;border-width:8px 0 8px 12px;border-color:transparent transparent transparent #0a0d00}
+.rainbow .brand h1 b,.rainbow .orb{animation:hue 3s linear infinite}
+.hub-head .tag{max-width:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.cards{width:100%;max-width:440px;margin-top:22px;padding-bottom:30px}
+.cards>*+*{margin-top:12px}
+.card{position:relative;overflow:hidden;display:grid;grid-template-columns:52px 1fr;gap:12px 14px;align-items:center;padding:16px;border-radius:16px;
+  border:1px solid var(--line);background:linear-gradient(160deg,var(--surface2),var(--surface));box-shadow:var(--shadow);
+  animation:in .5s cubic-bezier(.2,.8,.2,1) both}
+.card::before{content:"";position:absolute;top:0;left:16px;right:16px;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.8}
+.card:nth-child(2){animation-delay:.08s}.card:nth-child(3){animation-delay:.16s}
+.card-body{min-width:0}
+.card h2{margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em}
+.card p{margin:4px 0 0;font-size:13.5px;line-height:1.45;color:var(--muted)}
+.card .meta{display:block;margin-top:10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.meta b{margin:0 4px 0 2px;font-size:13px;letter-spacing:0;color:var(--text);font-variant-numeric:tabular-nums}
+.card .btn.play{grid-column:1/-1;max-width:none;min-height:46px;margin-top:2px;font-size:15px}
+.card.soon{border:1px dashed var(--line);box-shadow:none;background:repeating-linear-gradient(135deg,transparent 0,transparent 10px,rgba(127,127,127,.07) 10px,rgba(127,127,127,.07) 20px)}
+.card.soon::before{display:none}
+.card.soon h2{color:var(--muted)}
+.pill{display:inline-block;margin-top:10px;padding:4px 8px;border-radius:6px;border:1px solid var(--line);font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.ico{width:52px;height:52px;border-radius:12px;border:1px solid var(--line);background:var(--bg);display:grid;place-items:center}
+.ico-react::before{content:"";width:22px;height:22px;border-radius:50%;background:var(--go);box-shadow:0 0 0 4px var(--bg),0 0 0 5px var(--ink),0 0 16px var(--go)}
+.ico-mem{grid-template-columns:repeat(2,13px);grid-auto-rows:13px;gap:4px;align-content:center;justify-content:center}
+.ico-mem i{border-radius:3px;background:var(--line)}
+.ico-mem i:nth-child(1),.ico-mem i:nth-child(4){background:var(--ink)}
+.ico-num{font-size:15px;font-weight:700;letter-spacing:-.04em;color:var(--violet);animation:bob 3s ease-in-out infinite}
+.trophies{margin-top:24px}
+.trophies h3{margin:0 0 10px;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.trophies ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tr{padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:13px;font-weight:700;color:var(--muted)}
+.tr small{display:block;margin-top:3px;font-size:11.5px;line-height:1.35;font-weight:400;color:var(--muted)}
+.tr.on{color:var(--text);border-color:rgba(182,225,27,.55);background:linear-gradient(160deg,rgba(182,225,27,.14),transparent 70%),var(--surface)}
+.tr.on span{color:var(--ink)}
+.foot{margin:18px 0 0;font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-align:center;color:var(--muted)}
 
-/* game stage */
-#game{padding:0;max-width:none;background:var(--wait);color:var(--on-state);transition:background .15s;cursor:pointer}
-#game.go{background:var(--go)}
-#game.false{background:var(--warn)}
-#app{max-width:none}
-.stage-inner{max-width:420px;padding:0 28px;display:flex;flex-direction:column;align-items:center}
-.round{position:absolute;top:calc(22px + env(safe-area-inset-top,0px));left:0;right:0;font-size:16px;font-weight:600;opacity:.9}
-.dots{display:flex;gap:8px;justify-content:center;margin-top:10px}
-.dots i{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.35)}
-.dots i.d{background:#fff}
-.dots i.c{background:#fff;transform:scale(1.35)}
-.big{font-size:clamp(44px,15vw,84px);font-weight:800;letter-spacing:-.03em;line-height:1;margin:0}
-.sub{margin:14px 0 0;font-size:19px;opacity:.9;line-height:1.4}
+/* reaction intro */
+.mark{position:relative;width:84px;height:84px;margin-bottom:24px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 35%,var(--surface2),var(--bg));box-shadow:var(--shadow)}
+.mark::before{content:"";width:30px;height:30px;border-radius:50%;background:var(--go);box-shadow:0 0 26px var(--go);animation:beat 2.4s ease-in-out infinite}
+.mark::after{content:"";position:absolute;top:-8px;right:-8px;bottom:-8px;left:-8px;border-radius:50%;border:1px solid var(--ink);opacity:0;animation:ring 2.4s ease-out infinite}
+.h1-sm{font-size:30px;font-size:clamp(26px,8.4vw,38px);letter-spacing:.01em}
+.best{margin:26px 0 12px;padding:10px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.best b{margin-left:10px;font-size:17px;letter-spacing:0;color:var(--text);font-variant-numeric:tabular-nums}
+.how{margin:20px 0 0;max-width:290px;font-size:13px;line-height:1.55;color:var(--muted)}
+.how b{color:var(--text)}
+
+/* game stage: red wait, green go, amber false start, striped blue decoy */
+#game{padding:0;overflow:hidden;cursor:pointer;color:var(--on-wait);background-color:var(--wait);transition:background-color .12s;
+  background-image:radial-gradient(circle at 50% 42%,rgba(255,255,255,.16),transparent 60%),linear-gradient(180deg,rgba(0,0,0,.2),transparent 30%,rgba(0,0,0,.28))}
+#game.go{background-color:var(--go);color:var(--on-go)}
+#game.false{background-color:var(--warn);color:var(--on-warn)}
+#game.dec{background-color:var(--dec);color:var(--on-dec);
+  background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.09) 0,rgba(255,255,255,.09) 12px,transparent 12px,transparent 24px),radial-gradient(circle at 50% 42%,rgba(255,255,255,.14),transparent 60%),linear-gradient(180deg,rgba(0,0,0,.2),transparent 30%,rgba(0,0,0,.28))}
+#game::before,#game::after{content:"";position:absolute;left:50%;top:50%;border-radius:50%;border:1px solid currentColor;pointer-events:none}
+#game::before{width:240px;height:240px;margin:-120px 0 0 -120px;opacity:.22}
+#game::after{width:340px;height:340px;margin:-170px 0 0 -170px;opacity:.1}
+#game:not(.go):not(.false):not(.dec)::before{animation:scan 2.6s ease-in-out infinite}
+#game.go::before{animation:burst .45s ease-out forwards}
+.round{position:absolute;top:70px;left:0;right:0;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-variant-numeric:tabular-nums}
+.dots{display:flex;justify-content:center;margin-top:12px}
+.dots i{width:24px;height:4px;margin:0 3px;border-radius:2px;background:currentColor;opacity:.3}
+.dots i.d,.dots i.c{opacity:.95}.dots i.c{transform:scaleY(1.6)}
+.hp{margin:0 4px;font-size:20px;line-height:1}.hp.lost{opacity:.25}
+.stage-inner{position:relative;z-index:1;max-width:420px;padding:0 28px;display:flex;flex-direction:column;align-items:center}
+.big{margin:0;font-size:40px;font-size:clamp(34px,11.5vw,64px);font-weight:700;letter-spacing:-.035em;line-height:1.02}
+.sub{margin:16px 0 0;max-width:320px;font-size:17px;line-height:1.45;opacity:.92}
+.hint{margin:18px 0 0;padding:8px 12px;border-radius:8px;background:rgba(0,0,0,.22);font-size:13px;font-weight:600;letter-spacing:.02em}
+.hint:empty{display:none}
+#game.go .hint,#game.false .hint{background:rgba(0,0,0,.12)}
 #game.go .big{animation:pop .18s ease-out}
-@keyframes pop{from{transform:scale(.7)}to{transform:scale(1)}}
-#game:not(.go):not(.false) .big{animation:breathe 2.4s ease-in-out infinite}
-@keyframes breathe{50%{opacity:.7}}
+#game:not(.go):not(.false):not(.dec) .big{animation:breathe 2.4s ease-in-out infinite}
+#game.dec .big{animation:pop .18s ease-out}
 
-/* result */
-.ms{font-size:clamp(70px,24vw,120px);font-weight:800;letter-spacing:-.05em;line-height:1;margin:0;animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
-.ms small{font-size:.32em;font-weight:600;color:var(--muted);letter-spacing:0;margin-left:4px}
-.verdict{margin:10px 0 26px;font-size:20px;font-weight:600;color:var(--accent)}
-.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:28px}
-.chip{padding:8px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums}
-.chip.now{border-color:var(--accent);color:var(--text)}
-#next{pointer-events:none;opacity:.5;transition:opacity .2s}
+/* results */
+.avg-label{margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.ms{margin:0;font-size:84px;font-size:clamp(66px,22vw,106px);font-weight:700;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums;
+  text-shadow:0 0 36px var(--g1);animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
+.ms small{margin-left:8px;font-size:15px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);text-shadow:none}
+#result .verdict{margin:12px 0 24px;max-width:300px;font-size:17px;line-height:1.4;font-weight:500}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;margin:0 0 26px}
+.chip{margin:4px;padding:7px 11px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chip.now{border-color:var(--ink);color:var(--text)}
+#next{pointer-events:none;opacity:.45;transition:opacity .2s}
 #next.ready{pointer-events:auto;opacity:1}
-
-/* final */
-.avg-label{color:var(--muted);font-size:16px;margin:0 0 4px}
-.badge{margin:12px 0 0;padding:7px 14px;border-radius:999px;background:var(--go);color:#fff;font-size:15px;font-weight:700;animation:pop .4s .2s both}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:320px;margin-top:22px}
-.stat{display:flex;flex-direction:column;gap:4px;padding:14px 12px;border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
-.stat-label{font-size:14px;color:var(--muted)}
-.stat-val{font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums}
-.stat-val b{font-size:26px;font-weight:800;letter-spacing:-.03em;color:var(--text)}
-.stat-val.fast-val b{color:var(--go)}
-.list{list-style:none;padding:0;margin:18px 0 24px;width:100%;max-width:320px}
-.list li{display:flex;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--line);font-size:17px;font-variant-numeric:tabular-nums}
+.fmsg{margin:12px 0 0;max-width:300px;font-size:16px;line-height:1.45;color:var(--muted)}
+.badge{position:relative;overflow:hidden;margin:14px 0 0;padding:6px 12px;border-radius:6px;color:var(--on-accent);background:linear-gradient(180deg,#d7fb4c,#b2e41a);
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;animation:pop .4s .2s both}
+.badge::after{content:"";position:absolute;top:0;bottom:0;left:0;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);animation:sheen 2.4s 1s ease-in-out infinite}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:340px;margin-top:22px}
+.stat{display:flex;flex-direction:column;padding:12px 14px;border-radius:12px;text-align:left;border:1px solid var(--line);
+  background:linear-gradient(160deg,var(--surface2),var(--surface));box-shadow:var(--shadow)}
+.stat-label{margin-bottom:6px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.stat-val{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.stat-val b{font-size:24px;font-weight:700;letter-spacing:-.02em;color:var(--text)}
+.stat-val.fast-val b{color:var(--ink)}
+.list{list-style:none;margin:20px 0 24px;padding:0;width:100%;max-width:340px}
+.list li{display:flex;justify-content:space-between;padding:11px 2px;border-bottom:1px solid var(--line);font-size:15px;font-variant-numeric:tabular-nums}
 .list li span:first-child{color:var(--muted)}
-.list li.fast span:last-child{color:var(--go);font-weight:700}
-@media (max-height:640px){.mark{margin-bottom:14px;width:72px;height:72px}.best{margin:18px 0 6px}.list{margin:10px 0 12px}.list li{padding:6px 4px;font-size:15px}.ms{font-size:64px}.stats{margin-top:12px}.stat{padding:8px 12px}.stat-val b{font-size:22px}}
+.list li.fast span:last-child{color:var(--ink);font-weight:700}
+#final,#memDone,#rushOver{justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#final>:first-child,#memDone>:first-child,#rushOver>:first-child{margin-top:auto}
+#final>:last-child,#memDone>:last-child,#rushOver>:last-child{margin-bottom:auto}
+.r-stats{margin:18px 0 22px}.m-done{margin:22px 0 26px}
+
+/* memory match: dark tiles in both themes so the symbols always glow */
+#mem{justify-content:flex-start;padding-top:74px}
+.m-title{margin:0 0 14px;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.m-hud{margin:0 0 16px}
+.m-board{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;width:100%;max-width:420px;padding:10px;border-radius:16px;border:1px solid var(--line);
+  background:var(--surface);box-shadow:var(--shadow);width:min(100%,420px,calc(100vh - 250px))}
+.mc{position:relative;display:block;width:100%;overflow:hidden;border-radius:10px;border:1px solid #2b3041;
+  background:linear-gradient(150deg,#242839,#12141c);box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 4px 10px -4px rgba(0,0,0,.55);
+  transition:background .2s,border-color .2s,transform .12s,box-shadow .2s}
+.mc::before{content:"";display:block;padding-top:100%}
+.mc::after{content:"";position:absolute;left:50%;top:50%;width:22%;height:22%;margin:-11% 0 0 -11%;border:2px solid var(--accent);border-radius:3px;opacity:.5;transform:rotate(45deg)}
+.mc:active{transform:scale(.95)}
+.mf{position:absolute;top:0;right:0;bottom:0;left:0;display:grid;place-items:center;font-size:30px;font-size:clamp(22px,8.5vw,38px);line-height:1;opacity:0;transform:scale(.4);transition:opacity .15s,transform .2s}
+.mc.up,.mc.ok{background:linear-gradient(150deg,#1e2232,#151822);animation:flip .28s ease-out}
+.mc.up{border-color:#9b8cff}
+.mc.up::after,.mc.ok::after{display:none}
+.mc.up .mf,.mc.ok .mf{opacity:1;transform:none}
+.mc.ok{border-color:#c6f432;box-shadow:0 0 0 1px rgba(198,244,50,.3) inset,0 0 16px -2px rgba(198,244,50,.4)}
+.mc.ok .mf{animation:pop .3s}
+.k0 .mf{color:#c6f432}.k1 .mf{color:#ff6b6b}.k2 .mf{color:#35e08a}.k3 .mf{color:#ffb547}
+.k4 .mf{color:#5aa9ff}.k5 .mf{color:#ff6fc1}.k6 .mf{color:#ffd84a}.k7 .mf{color:#3fe0d0}
+
+/* toast and celebration */
+#toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));z-index:20;max-width:92vw;padding:11px 16px;border-radius:10px;
+  transform:translate(-50%,-170%);background:#14161d;color:#f2f4f8;border:1px solid #2a2f3d;border-left:3px solid #c6f432;
+  font-size:14px;font-weight:600;text-align:center;box-shadow:0 12px 30px -10px rgba(0,0,0,.6);transition:transform .35s cubic-bezier(.2,.9,.3,1.2);pointer-events:none}
+#toast.on{transform:translate(-50%,0)}
+#fx{position:fixed;top:0;left:0;right:0;bottom:0;z-index:15;overflow:hidden;pointer-events:none}
+.cf{position:absolute;top:-16px;width:8px;height:12px;border-radius:2px;animation:fall 1.3s ease-in forwards}
+
+@media (max-height:640px){
+  .mark{width:68px;height:68px;margin-bottom:14px}.best{margin:16px 0 8px}.list{margin:10px 0 12px}.list li{padding:7px 2px}
+  .ms{font-size:58px}.fmsg{margin-top:6px;font-size:14px}.r-stats,.m-done{margin:10px 0 12px}.stat{padding:8px 12px}.stat-val b{font-size:20px}
+  #mem{padding-top:70px}.m-title{margin-bottom:8px}.m-hud{margin-bottom:10px}
+}
+@media (max-width:340px){.card{padding:14px}.btn{font-size:15px}.tr{padding:9px 10px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+/* ===== v3.0 platform shell ===== */
+#hub{display:none;padding:0;overflow:hidden;text-align:left;justify-content:flex-start;align-items:stretch}
+#hub.on{display:block}
+.topbar{position:absolute;top:0;left:0;right:0;height:64px;padding:0 126px 0 16px;display:flex;align-items:center}
+.topbar .brand h1{font-size:clamp(17px,5.4vw,26px)}
+.panes{position:absolute;top:64px;left:0;right:0;bottom:64px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 16px 28px}
+.pane{display:none;max-width:820px;margin:0 auto}.pane.on{display:block;animation:in .3s ease-out}
+.nav{position:absolute;left:0;right:0;bottom:0;height:64px;z-index:6;display:flex;padding:6px;background:var(--surface);border-top:1px solid var(--line)}
+.nv{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:12px;font-size:11.5px;font-weight:700;color:var(--muted)}
+.nv svg{width:22px;height:22px;margin-bottom:3px}.nv.on{color:var(--ink);background:var(--surface2)}
+@media (min-width:900px){
+  .topbar{padding-left:24px}.nav{top:64px;bottom:0;right:auto;width:210px;height:auto;flex-direction:column;justify-content:flex-start;padding:16px 12px;border-top:0;border-right:1px solid var(--line)}
+  .nv{flex:none;flex-direction:row;justify-content:flex-start;min-height:48px;margin-bottom:6px;padding:0 14px;font-size:14px}.nv svg{margin:0 12px 0 0}
+  .panes{left:210px;bottom:0;padding:12px 36px 36px}
+}
+.sh{margin:24px 0 10px;font-size:13px;font-weight:700;color:var(--muted)}
+.st{display:inline-block;padding:4px 9px;border-radius:6px;font-size:11px;font-weight:700}
+.st.live{background:var(--accent);color:var(--on-accent)}.st.soon{border:1px solid var(--line);color:var(--muted)}
+.sig{width:88px;height:88px;border-radius:50%;background:var(--go);box-shadow:0 0 0 12px rgba(43,213,118,.18),0 0 0 26px rgba(43,213,118,.08),0 0 50px var(--go);animation:beat 2.6s ease-in-out infinite}
+.hero{position:relative;overflow:hidden;display:grid;gap:18px;padding:22px 18px;border-radius:22px;border:1px solid var(--line);
+  background:radial-gradient(circle at 20% 0%,var(--g1),transparent 55%),radial-gradient(circle at 100% 100%,var(--g2),transparent 55%),var(--surface);box-shadow:var(--shadow)}
+.hero-art{position:relative;height:150px;display:grid;place-items:center;border-radius:16px;background:#14161d;overflow:hidden}
+.dec{position:absolute;right:18%;bottom:16%;width:22px;height:22px;border-radius:50%;background:var(--dec);box-shadow:0 0 14px var(--dec)}
+.hero h2{margin:10px 0 0;font-size:clamp(28px,8vw,40px);letter-spacing:-.02em}
+.hero p{margin:8px 0 16px;font-size:15px;line-height:1.5;color:var(--muted);max-width:440px}
+.hero .btn{max-width:260px}
+@media (min-width:700px){.hero{grid-template-columns:240px 1fr;align-items:center;padding:26px}.hero-art{height:200px}}
+.hs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+@media (min-width:560px){.hs{grid-template-columns:repeat(4,1fr)}}
+.hs>div,.rc{padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface)}
+.hs span,.rc span{display:block;font-size:12px;color:var(--muted)}.hs b{display:block;margin-top:4px;font-size:19px;font-variant-numeric:tabular-nums}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mini button{display:flex;align-items:center;min-height:56px;padding:0 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface2);font-weight:700;font-size:14px}
+.mini i{flex:none;width:26px;height:26px;margin-right:10px;border-radius:50%}.mini .m1{background:var(--go);box-shadow:0 0 12px var(--go)}.mini .m2{border-radius:7px;background:linear-gradient(135deg,#9b8cff,#5aa9ff)}
+.lib{display:grid;gap:14px}@media (min-width:700px){.lib{grid-template-columns:1fr 1fr}}
+.gc{overflow:hidden;border-radius:20px;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow)}
+.gc .art{height:128px;display:grid;place-items:center}.gb{padding:16px}
+.gc h2{margin:10px 0 0;font-size:21px;letter-spacing:-.01em}.gc p{margin:6px 0 0;font-size:14px;line-height:1.45;color:var(--muted)}
+.gc .meta{display:block;margin:12px 0}.gc .btn.play{max-width:none;min-height:48px}
+.g-react .art{background:radial-gradient(circle at 50% 50%,rgba(43,213,118,.28),transparent 60%),#2a1014}.g-react .sig{width:64px;height:64px}
+.g-mem .art{grid-template-columns:repeat(4,30px);grid-auto-rows:30px;gap:8px;align-content:center;justify-content:center;background:linear-gradient(150deg,#1b1f33,#0f1119)}
+.g-mem .art i{border-radius:7px;background:#2b3041;border:1px solid #3a4157}.g-mem .art i:nth-child(3n){background:linear-gradient(135deg,#c6f432,#35e08a);border:0}.g-mem .art i:nth-child(5n){background:linear-gradient(135deg,#9b8cff,#5aa9ff);border:0}
+.g-soon{border-style:dashed;box-shadow:none}.g-soon .art{font-size:34px;font-weight:700;color:var(--muted);background:repeating-linear-gradient(135deg,transparent 0,transparent 10px,rgba(127,127,127,.09) 10px,rgba(127,127,127,.09) 20px)}
+.rcs{display:grid;gap:10px}@media (min-width:600px){.rcs{grid-template-columns:repeat(3,1fr)}}
+.rc{padding:16px}.rc b{display:block;margin:6px 0;font-size:34px;letter-spacing:-.03em;font-variant-numeric:tabular-nums}.rc em{font-style:normal;color:var(--text)}.rc b em{font-size:34px}
+.rc small{font-size:12.5px;color:var(--muted)}.rc.rv{border-color:rgba(155,140,255,.6)}.rc.rm{border-color:rgba(90,169,255,.6)}.rc:first-child{border-color:rgba(182,225,27,.6)}
+.rc.wide span{margin-bottom:10px;color:var(--text);font-weight:700}.rc.wide small{display:block;margin-top:10px}
+.bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#9b8cff,var(--accent));transition:width .5s}
+.tgrid{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}@media (min-width:560px){.tgrid{grid-template-columns:1fr 1fr}}
+.tr{position:relative;padding:12px 12px 12px 48px;text-align:left}.tr span{display:block;color:inherit;font-size:14px}
+.tb{position:absolute;left:12px;top:12px;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-style:normal;font-size:13px}
+.tr.on .tb{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}.tr.on .tb::before{content:"\2713"}
+.tr:not(.on){opacity:.75}.tr:not(.on) .tb::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--line)}
+.foot{text-transform:none;letter-spacing:.04em}
+/* game screens */
+.round::before{content:"Classic";display:block;margin-bottom:8px;opacity:.75;letter-spacing:.2em;text-transform:uppercase}
+.rushmode .round::before{content:"Reaction Rush"}
+.rushmode #game{box-shadow:inset 0 0 0 6px rgba(155,140,255,.6)}
+.rushmode #roundLabel{display:inline-block;padding:6px 14px;border-radius:999px;background:rgba(0,0,0,.3);font-size:14px;color:#fff}
+.rushmode .hp{font-size:28px;margin:0 5px;color:#ff5c7a}
+#home{background:radial-gradient(circle at 50% 0%,var(--g1),transparent 55%)}
+#result,#final{background:radial-gradient(ellipse at 50% 0%,var(--g1),transparent 60%)}
+#rushOver{background:radial-gradient(ellipse at 50% 0%,var(--g2),transparent 65%)}
+#memDone{background:radial-gradient(ellipse at 50% 0%,rgba(90,169,255,.18),transparent 60%)}
+@keyframes flip{from{transform:perspective(500px) rotateY(90deg)}to{transform:none}}
+.m-board{background:linear-gradient(160deg,var(--surface2),var(--surface))}
+.mc::after{width:30%;height:30%;margin:-15% 0 0 -15%;border-radius:50%}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 </head>
 <body>
 <div id="app">
+  <button id="snd" type="button" aria-pressed="false" aria-label="Sound off. Tap to turn on">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke:var(--text)"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="w" d="M16 9a4 4 0 010 6M18.5 6.5a8 8 0 010 11"/><path class="x" d="M17 9l5 6M22 9l-5 6"/></svg>
+  </button>
   <button id="theme" type="button" aria-label="Switch light or dark theme">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 100 20V2z"/><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="1.6" style="stroke:var(--text)"/></svg>
   </button>
 
   <section id="hub" class="screen on">
-    <header class="hub-head">
-      <h1>QUICKTAP</h1>
-      <p class="tag">A tiny arcade of quick games. Pick one and play.</p>
-    </header>
-    <div class="cards">
-      <article class="card">
-        <div class="ico ico-react" aria-hidden="true"></div>
-        <div class="card-body">
-          <h2>Reaction Test</h2>
-          <p>Tap the moment the screen turns green. Five rounds, one average.</p>
-          <span class="meta">Personal best <b id="bestHub">--</b></span>
-        </div>
-        <button class="btn play" id="playReaction" type="button">Play</button>
-      </article>
-      <article class="card soon" aria-label="Memory Match, coming soon">
-        <div class="ico ico-mem" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-        <div class="card-body">
-          <h2>Memory Match</h2>
-          <p>Flip the cards and find every pair.</p>
-          <span class="pill">Coming soon</span>
-        </div>
-      </article>
-      <article class="card soon" aria-label="Number Merge, coming soon">
-        <div class="ico ico-num" aria-hidden="true">2+2</div>
-        <div class="card-body">
-          <h2>Number Merge</h2>
-          <p>Slide and combine tiles to reach a higher number.</p>
-          <span class="pill">Coming soon</span>
-        </div>
-      </article>
+  <header class="topbar"><div class="brand" id="logo"><span class="orb"></span><h1>ZINORA<b>PLAY</b></h1></div></header>
+  <nav class="nav" aria-label="Main"><button class="nv on" type="button" data-tab="hub"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>Home</button><button class="nv" type="button" data-tab="games"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9h12a4 4 0 014 4v1a3 3 0 01-5.2 2L15 14H9l-1.8 2A3 3 0 012 14v-1a4 4 0 014-4zM8 10.5v3M6.5 12h3"/></svg>Games</button><button class="nv" type="button" data-tab="records"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>Records</button><button class="nv" type="button" data-tab="achievements"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 01-8 0zM8 6H4v1a3 3 0 003 3M16 6h4v1a3 3 0 01-3 3M12 13v4M8 20h8"/></svg>Achievements</button></nav>
+  <main class="panes">
+   <div class="pane on" data-pane="home">
+    <article class="hero">
+      <div class="hero-art" aria-hidden="true"><div class="sig"></div><div class="dec"></div></div>
+      <div class="hero-txt"><span class="st live">Featured</span>
+        <h2>Reaction Test</h2>
+        <p>Five clean rounds to measure your reflexes, or switch to Reaction Rush: three lives, endless rounds and blue decoys that bite.</p>
+        <button class="btn play-now" id="playReaction" type="button">Play now</button></div>
+    </article>
+    <div class="hs">
+      <div><span>Classic best</span><b id="hsClassic">--</b></div>
+      <div><span>Rush best</span><b id="hsRush">--</b></div>
+      <div><span>Memory best</span><b id="hsMem">--</b></div>
+      <div><span>Achievements</span><b id="hsAch">0/0</b></div>
     </div>
-  </section>
+    <h3 class="sh">Jump back in</h3>
+    <div class="mini">
+      <button type="button" data-g="reaction"><i class="m1"></i>Reaction Test</button>
+      <button type="button" data-g="memory"><i class="m2"></i>Memory Match</button>
+    </div>
+    <h3 class="sh">Latest achievements</h3>
+    <ul class="tgrid" id="trPrev"></ul>
+    <p class="foot">ZINORAPLAY v3.0</p>
+   </div>
+   <div class="pane" data-pane="games">
+    <h3 class="sh">Available now</h3>
+    <div class="lib">
+      <article class="gc g-react"><div class="art" aria-hidden="true"><div class="sig"></div></div>
+        <div class="gb"><span class="st live">Available</span><h2>Reaction Test</h2>
+        <p>Classic five rounds, or Reaction Rush with lives and decoys.</p>
+        <span class="meta">Classic best <b id="bestHub">--</b> Rush <b id="bestRushHub">--</b></span>
+        <button class="btn play" type="button" data-g="reaction">Play</button></div></article>
+      <article class="gc g-mem"><div class="art" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="gb"><span class="st live">Available</span><h2>Memory Match</h2>
+        <p>Flip the cards and find all eight pairs in as few moves as you can.</p>
+        <span class="meta">Personal best <b id="bestMemHub">--</b></span>
+        <button class="btn play" id="playMemory" type="button">Play</button></div></article>
+    </div>
+    <h3 class="sh">Upcoming</h3>
+    <div class="lib">
+      <article class="gc g-soon" aria-label="Number Merge, coming soon"><div class="art" aria-hidden="true">2+2</div>
+        <div class="gb"><span class="st soon">Coming soon</span><h2>Number Merge</h2><p>Slide and combine tiles to reach a higher number.</p></div></article>
+    </div>
+   </div>
+   <div class="pane" data-pane="records">
+    <h3 class="sh">Personal bests</h3>
+    <div class="rcs">
+      <div class="rc"><span>Classic average</span><b><em id="rcClassic">--</em> ms</b><small>Lower is faster</small></div>
+      <div class="rc rv"><span>Rush score</span><b id="rcRush">--</b><small>Best streak <em id="rcStreak">--</em></small></div>
+      <div class="rc rm"><span>Memory moves</span><b id="rcMoves">--</b><small>Best time <em id="rcTime">--</em></small></div>
+    </div>
+    <h3 class="sh">Progress</h3>
+    <div class="rc wide"><span id="rcProg">Achievements</span><div class="bar"><i id="trBar2"></i></div><small>Unlock them all by playing every game.</small></div>
+   </div>
+   <div class="pane" data-pane="achievements">
+    <h3 class="sh" id="trHead">Achievements</h3>
+    <div class="bar"><i id="trBar"></i></div>
+    <ul class="tgrid" id="trList"></ul>
+   </div>
+  </main>
+</section>
 
   <section id="home" class="screen">
     <button class="back" id="back" type="button" aria-label="Back to all games">
@@ -179,9 +377,10 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
     <div class="mark" aria-hidden="true"></div>
     <h1 class="h1-sm">Reaction Test</h1>
     <p class="tag">How fast are your reflexes? Five rounds will tell.</p>
-    <div class="best">Personal best<b id="bestHome">--</b></div>
-    <button class="btn" id="start" type="button">Start</button>
-    <p class="how">Wait for the screen to turn green, then tap as fast as you can.</p>
+    <div class="best">Classic best<b id="bestHome">--</b></div>
+    <button class="btn" id="start" type="button">Classic · 5 rounds</button>
+    <button class="btn rush" id="startRush" type="button">Reaction Rush</button>
+    <p class="how">Rush: three lives, endless rounds. Tap on green only. Blue is a decoy! Rush best <b id="bestRush">--</b></p>
   </section>
 
   <section id="game" class="screen" aria-live="polite">
@@ -189,6 +388,7 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
     <div class="stage-inner">
       <p class="big" id="gBig">Wait for green</p>
       <p class="sub" id="gSub">Don’t tap yet</p>
+      <p class="hint" id="gHint"></p>
     </div>
   </section>
 
@@ -203,6 +403,7 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
   <section id="final" class="screen">
     <p class="avg-label">Your average</p>
     <p class="ms"><span id="fAvg">0</span><small>ms</small></p>
+    <p class="fmsg" id="fMsg"></p>
     <div class="badge" id="fBadge" hidden>New personal best</div>
     <div class="stats">
       <div class="stat"><span class="stat-label">Fastest</span><span class="stat-val fast-val"><b id="fFast">0</b> ms</span></div>
@@ -212,14 +413,59 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
     <button class="btn" id="again" type="button">Play again</button>
     <button class="btn ghost" id="toHome" type="button">All games</button>
   </section>
+
+  <section id="rushOver" class="screen">
+    <p class="avg-label">Game over</p>
+    <p class="ms"><span id="oScore">0</span><small>points</small></p>
+    <p class="fmsg" id="oMsg"></p>
+    <div class="badge" id="oBadge" hidden>New Rush record</div>
+    <div class="stats r-stats">
+      <div class="stat"><span class="stat-label">Best streak</span><span class="stat-val"><b id="oStreak">0</b></span></div>
+      <div class="stat"><span class="stat-label">Rounds survived</span><span class="stat-val"><b id="oRounds">0</b></span></div>
+      <div class="stat"><span class="stat-label">Average</span><span class="stat-val"><b id="oAvg">--</b></span></div>
+      <div class="stat"><span class="stat-label">Fastest</span><span class="stat-val fast-val"><b id="oFast">--</b></span></div>
+      <div class="stat"><span class="stat-label">Decoys ignored</span><span class="stat-val"><b id="oFakes">0</b></span></div>
+      <div class="stat"><span class="stat-label">Rush record</span><span class="stat-val"><b id="oBest">0</b></span></div>
+    </div>
+    <button class="btn" id="rAgain" type="button">Play again</button>
+    <button class="btn ghost" id="rHome" type="button">All games</button>
+  </section>
+
+  <section id="mem" class="screen">
+    <button class="back" id="mBack" type="button" aria-label="Back to all games">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4.5L8 12l7.5 7.5" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="stroke:var(--text)"/></svg>
+    </button>
+    <h2 class="m-title">Memory Match</h2>
+    <div class="stats m-hud">
+      <div class="stat"><span class="stat-label">Moves</span><span class="stat-val"><b id="mMoves">0</b></span></div>
+      <div class="stat"><span class="stat-label">Time</span><span class="stat-val"><b id="mTime">0:00</b></span></div>
+    </div>
+    <div class="m-board" id="mBoard" role="group" aria-label="Memory cards"></div>
+  </section>
+
+  <section id="memDone" class="screen">
+    <p class="avg-label">All pairs found</p>
+    <p class="ms"><span id="dMoves">0</span><small>moves</small></p>
+    <p class="fmsg" id="dMsg"></p>
+    <div class="badge" id="dBadge" hidden>New personal best</div>
+    <div class="stats m-done">
+      <div class="stat"><span class="stat-label">Time</span><span class="stat-val fast-val"><b id="dTime">0:00</b></span></div>
+      <div class="stat"><span class="stat-label">Best</span><span class="stat-val"><b id="dBest">0</b> moves</span></div>
+    </div>
+    <button class="btn" id="mAgain" type="button">Play again</button>
+    <button class="btn ghost" id="mHome" type="button">All games</button>
+  </section>
 </div>
+
+<div id="fx" aria-hidden="true"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script>
 (function () {
   "use strict";
 
   /* ---------- Config ---------- */
-  var CONFIG = { rounds: 5, minDelay: 1500, maxDelay: 4500, nextLockMs: 450, bestKey: "quicktap:best", themeKey: "quicktap:theme" };
+  var CONFIG = { rounds: 5, minDelay: 1500, maxDelay: 4500, nextLockMs: 450, bestKey: "quicktap:best", memKey: "quicktap:memory:best", themeKey: "quicktap:theme", achKey: "zinoraplay:ach", rushKey: "zinoraplay:rush:best", sndKey: "zinoraplay:sound" };
 
   /* ---------- Storage (safe) ---------- */
   var store = {
@@ -233,10 +479,17 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
     hub: $("hub"), home: $("home"), game: $("game"), result: $("result"), final: $("final"),
     bestHome: $("bestHome"), bestHub: $("bestHub"), gBig: $("gBig"), gSub: $("gSub"), roundLabel: $("roundLabel"), dots: $("dots"),
     rLabel: $("rLabel"), rMs: $("rMs"), rVerdict: $("rVerdict"), chips: $("chips"), next: $("next"),
-    fAvg: $("fAvg"), fFast: $("fFast"), fSlow: $("fSlow"), fBadge: $("fBadge"), fList: $("fList")
+    fAvg: $("fAvg"), fFast: $("fFast"), fSlow: $("fSlow"), fBadge: $("fBadge"), fList: $("fList"),
+    mem: $("mem"), memDone: $("memDone"), mBoard: $("mBoard"), mMoves: $("mMoves"), mTime: $("mTime"),
+    dMoves: $("dMoves"), dTime: $("dTime"), dBest: $("dBest"), dBadge: $("dBadge"), bestMemHub: $("bestMemHub"),
+    snd: $("snd"), fx: $("fx"), toast: $("toast"), trHead: $("trHead"), trList: $("trList"),
+    gHint: $("gHint"), fMsg: $("fMsg"), dMsg: $("dMsg"),
+    rushOver: $("rushOver"), oScore: $("oScore"), oMsg: $("oMsg"), oBadge: $("oBadge"), oStreak: $("oStreak"),
+    oRounds: $("oRounds"), oAvg: $("oAvg"), oFast: $("oFast"), oFakes: $("oFakes"), oBest: $("oBest"),
+    bestRush: $("bestRush"), bestRushHub: $("bestRushHub")
   };
   function show(name) {
-    ["hub", "home", "game", "result", "final"].forEach(function (n) { els[n].classList.toggle("on", n === name); });
+    ["hub", "home", "game", "result", "final", "mem", "memDone", "rushOver"].forEach(function (n) { els[n].classList.toggle("on", n === name); });
   }
   function verdict(ms) {
     if (ms < 200) return "Lightning fast";
@@ -256,11 +509,195 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
     applyTheme(next); store.set(CONFIG.themeKey, next);
   });
 
+  /* ---------- Sound (off by default; Web Audio tones, no files) ---------- */
+  var sndOn = store.get(CONFIG.sndKey) === "1", actx = null;
+  function initAudio() {
+    if (!actx) { try { var AC = window.AudioContext || window.webkitAudioContext; actx = AC ? new AC() : null; } catch (e) {} }
+    if (actx && actx.state === "suspended") actx.resume();
+  }
+  function tone(f, d, at, type, v) {
+    if (!actx) return;
+    var o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + (at || 0);
+    o.type = type || "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(v || .06, t); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + d + .02);
+  }
+  var SFX = {
+    go: function () { tone(880, .09); }, tap: function () { tone(660, .08); },
+    early: function () { tone(150, .25, 0, "sawtooth", .05); },
+    flip: function () { tone(520, .05); }, miss: function () { tone(220, .14, 0, "triangle"); },
+    match: function () { tone(660, .1); tone(990, .14, .09); },
+    win: function () { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, .16, i * .1); }); },
+    ach: function () { tone(784, .1); tone(1175, .22, .1); }
+  };
+  function sfx(n) { if (sndOn && SFX[n]) { try { SFX[n](); } catch (e) {} } }
+  function setSnd(on) {
+    sndOn = on; els.snd.classList.toggle("on", on); els.snd.setAttribute("aria-pressed", String(on));
+    els.snd.setAttribute("aria-label", on ? "Sound on. Tap to mute" : "Sound off. Tap to turn on");
+    store.set(CONFIG.sndKey, on ? "1" : "0");
+  }
+  document.addEventListener("pointerdown", function () { if (sndOn) initAudio(); });
+  els.snd.addEventListener("click", function () { initAudio(); setSnd(!sndOn); sfx("tap"); });
+  setSnd(sndOn);
+
+  /* ---------- Effects and achievements ---------- */
+  var ACH = {
+    first: ["First Game", "Complete any game"], quick: ["Quick Hands", "React in under 200 ms"],
+    record: ["Personal Record", "Beat a previous best"], mem: ["Memory Master", "Complete Memory Match"],
+    sharp: ["Sharp Eyes", "Finish Memory Match in 12 moves or fewer"],
+    rush1: ["Rush Rookie", "Finish your first Reaction Rush game"], rr10: ["Survivor", "Survive 10 rounds in Rush"],
+    rs5: ["Hot Streak", "Reach a 5-round streak in Rush"], rf5: ["Decoy Dodger", "Ignore 5 decoys in one Rush game"],
+    r1k: ["Rush Legend", "Score 1,000 points in Rush"], secret: ["Curious Cat", "Hidden. Explore to find it"]
+  };
+  var got = {}, tq = [], fxTimer = null, toastTimer = null;
+  try { got = JSON.parse(store.get(CONFIG.achKey)) || {}; } catch (e) { got = {}; }
+  var reduced = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  function clearFx() { clearTimeout(fxTimer); els.fx.innerHTML = ""; }
+  function confetti(n) {
+    if (reduced) return;
+    var cols = ["#c6f432", "#9b8cff", "#5aa9ff", "#eef0f4", "#c6f432", "#2bd576"], h = "";
+    for (var i = 0; i < n; i++) {
+      h += '<i class="cf" style="left:' + Math.round(Math.random() * 100) + "%;background:" + cols[i % 6] + ";--x:" +
+        Math.round(Math.random() * 120 - 60) + "px;--r:" + Math.round(Math.random() * 720 - 360) + "deg;animation-delay:" +
+        (Math.random() * .3).toFixed(2) + 's"></i>';
+    }
+    els.fx.innerHTML = h; clearTimeout(fxTimer); fxTimer = setTimeout(clearFx, 1800);
+  }
+  function unlock(id) {
+    if (got[id]) return;
+    got[id] = 1; store.set(CONFIG.achKey, JSON.stringify(got));
+    tq.push(ACH[id][0]);
+    els.toast.textContent = "Achievement unlocked: " + tq.join(" + "); els.toast.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { els.toast.classList.remove("on"); tq = []; }, 3000);
+    sfx("ach"); confetti(18); renderTrophies();
+  }
+  function renderTrophies() {
+    var ids = Object.keys(ACH), n = 0, on = [], off = [];
+    ids.forEach(function (k) { if (got[k]) { n++; on.push(k); } else off.push(k); });
+    function item(k) {
+      var u = !!got[k];
+      return '<li class="tr' + (u ? " on" : "") + '"><i class="tb"></i><span>' + (u || k !== "secret" ? ACH[k][0] : "???") + "</span><small>" + ACH[k][1] + "</small></li>";
+    }
+    els.trList.innerHTML = on.concat(off).map(item).join("");
+    $("trPrev").innerHTML = on.slice(-4).reverse().concat(off).slice(0, 4).map(item).join("");
+    els.trHead.textContent = "Achievements " + n + " of " + ids.length;
+    var pc = Math.round(n / ids.length * 100) + "%";
+    $("trBar").style.width = pc; $("trBar2").style.width = pc;
+    $("rcProg").textContent = "Achievements " + n + " of " + ids.length;
+    $("hsAch").textContent = n + "/" + ids.length;
+    var b = getBest(), rb = getRushBest(), mb = getMemBest();
+    $("rcClassic").textContent = b === null ? "--" : b; $("hsClassic").textContent = b === null ? "--" : b + " ms";
+    $("rcRush").textContent = rb ? rb.score : "--"; $("hsRush").textContent = rb ? rb.score : "--";
+    $("rcStreak").textContent = rb && rb.streak ? rb.streak : "--";
+    $("rcMoves").textContent = mb ? mb.moves : "--"; $("rcTime").textContent = mb ? fmtTime(mb.ms) : "--";
+    $("hsMem").textContent = mb ? mb.moves + " moves" : "--";
+  }
+  var orbTaps = 0, orbLast = 0;                 /* hidden surprise: tap the logo orb 7 times quickly */
+  $("logo").addEventListener("click", function () {
+    var now = Date.now();
+    orbTaps = now - orbLast < 1500 ? orbTaps + 1 : 1; orbLast = now;
+    if (orbTaps >= 7) {
+      orbTaps = 0; document.body.classList.toggle("rainbow"); confetti(30); sfx("win"); unlock("secret");
+    }
+  });
+
+  /* ---------- Message pools (shuffled bags: no repeats until all have been shown) ---------- */
+  function bag(a) {
+    var q = [];
+    return function () {
+      if (!q.length) {
+        q = a.slice();
+        for (var i = q.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = q[i]; q[i] = q[j]; q[j] = t; }
+      }
+      return q.pop();
+    };
+  }
+  var TIERS = [180, 230, 300, 400];
+  function tier(ms) { for (var i = 0; i < TIERS.length; i++) if (ms < TIERS[i]) return i; return TIERS.length; }
+  var MSG = {
+    wait: bag([
+      "Relax. The green light hasn’t arrived yet.", "Patience is a skill. Apparently, we’re testing yours.",
+      "Not yet! Your finger is getting impatient.", "Take a breath. It’s not going anywhere.",
+      "Steady… the light is still getting dressed.", "Good things come to those who wait. Then tap.",
+      "Your thumb is ready. Your eyes are on duty.", "Still red. Stay calm and keep watching.",
+      "Any second now. Or maybe a bit later.", "Quiet focus. The screen is thinking.",
+      "Hold that energy. The signal is on its way.", "Loading green… please keep your finger relaxed.",
+      "Think of a calm lake. Then think of green.", "The wait is part of the game. Enjoy it."
+    ]),
+    early: bag([
+      "Whoa! The green light wasn’t ready for you.", "Too early! Were you trying to break a record before starting?",
+      "Easy there. The signal hasn’t arrived.", "That was enthusiastic. Unfortunately, incorrect.",
+      "Your finger moved faster than the light.", "Great speed, wrong moment. Try again.",
+      "Oops! Green hadn’t even left home yet.", "Eager hands detected. Please wait for green.",
+      "Too soon, champion. Take a breath and reset.", "That tap was brave. Also early.",
+      "Almost like you could see the future. You couldn’t.", "Quick finger! Slow down just a little.",
+      "The light says: ‘Not yet, my friend.’", "False alarm. Your reflexes are fine. Your timing was early."
+    ]),
+    pb: bag(["New personal best! Your fastest run yet.", "Record broken. That felt good, right?", "You just beat yourself. The toughest opponent."]),
+    r: [
+      bag(["Incredible. Are you part cheetah?", "Lightning! That is elite speed.", "Blink and you would have missed it.", "Wow. Your reflexes are on fire."]),
+      bag(["Very sharp. Nicely done!", "Fast hands! That was great.", "Impressive reaction. Keep it up.", "Smooth and speedy."]),
+      bag(["Solid reaction. Right on track.", "Good one. Steady and reliable.", "Nice and clean. Well played.", "Perfectly respectable speed."]),
+      bag(["A relaxed tap. Very calm.", "Not bad. Your coffee may still be loading.", "Comfortable pace. Speed up next time!", "Steady wins some races. Just not this one."]),
+      bag(["Taking the scenic route? We love it.", "Slow and smooth. Let’s try for faster.", "Did a butterfly land on your screen?", "No rush. The next round is a fresh start."])
+    ],
+    f: [
+      bag(["Elite run! Your reflexes belong in a record book.", "Spectacular. That was a champion’s run."]),
+      bag(["Great run! Fast and consistent.", "Sharp hands today. Really nice."]),
+      bag(["A solid run. You’re warming up nicely.", "Good result. A little practice goes far."]),
+      bag(["A calm run. Try again and chase that green faster.", "Not bad at all. Your next run could surprise you."]),
+      bag(["Every champion starts somewhere. Try again!", "A gentle run. Your thumb will wake up soon."])
+    ],
+    m: [
+      bag(["Perfect memory! You barely missed.", "Brilliant. Those cards had no secrets from you."]),
+      bag(["Excellent memory! Very well done.", "Sharp eyes. Those pairs had no chance."]),
+      bag(["Nice work. You found them all!", "Good game. Practice makes it faster."]),
+      bag(["All pairs found. Patience pays off!", "Done! Every card has a partner now."])
+    ],
+    rw: bag([
+      "Three lives. Zero pressure. Okay, a little pressure.", "Stay calm. Your lives are watching.",
+      "The signal is warming up. So should your thumb.", "Eyes on the screen. Heart rate low.",
+      "Rush mode: where patience meets reflexes.", "Keep your cool. Green is coming.",
+      "Don’t blink. Actually, do blink. Just not for long.", "Focus. Breathe. Tap only when it’s green."
+    ]),
+    re: bag([
+      "Ouch! That cost a life. Wait for green.", "Too eager! A life has left the building.",
+      "Trigger finger alert. One life lost.", "The green light sends its regards. And a life penalty.",
+      "Bold move. Wrong timing.", "That was fast. Sadly, it was early.",
+      "Easy, speedy! Patience protects your lives.", "Your finger raced the light and lost."
+    ]),
+    rd: bag([
+      "Gotcha! That blue was a decoy.", "Blue is not green. Lesson learned!", "The decoy says thanks for the life.",
+      "Nice try, but blue was a trick.", "That one was blue. Next time, hold still.", "Sneaky, wasn’t it? Blue never counts."
+    ]),
+    ri: bag([
+      "Decoy ignored. Smooth control!", "Blue didn’t fool you. Nice discipline.", "You held steady. The decoy is jealous.",
+      "Cool head, clean hands. Bonus earned.", "Not today, decoy!"
+    ]),
+    rs: bag([
+      "You survived the bluff! Respect.", "Decoys dodged, signal smashed.", "That was a tricky round. You handled it.",
+      "Calm under pressure. That’s a skill.", "Fooled? Never. Fast? Always."
+    ]),
+    rk: bag(["You’re on fire!", "Unstoppable!", "Look at that streak!", "Reflexes in rhythm!", "Hot hands today!"]),
+    ro: [
+      bag(["Good warm-up. The next run will go further.", "Every Rush legend starts with a short first run."]),
+      bag(["Solid run! You’re getting the hang of it.", "Nice work. The decoys are getting nervous."]),
+      bag(["Great run! Your reflexes are sharp.", "Impressive survival skills."]),
+      bag(["Legendary run! The decoys fear you.", "Outstanding. That is arcade-champion territory."])
+    ]
+  };
+
   /* ---------- Personal best ---------- */
   function getBest() { var v = parseInt(store.get(CONFIG.bestKey), 10); return isNaN(v) ? null : v; }
   function renderBest() {
     var b = getBest(), t = b === null ? "--" : b + " ms";
     els.bestHome.textContent = t; els.bestHub.textContent = t;
+    var mb = getMemBest();
+    els.bestMemHub.textContent = mb ? mb.moves + " moves · " + fmtTime(mb.ms) : "--";
+    var rb = getRushBest(), rbt = rb ? String(rb.score) : "--";
+    els.bestRush.textContent = rbt; els.bestRushHub.textContent = rbt;
+    renderTrophies();
   }
 
   /* ---------- Game state ---------- */
@@ -281,7 +718,8 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
     els.game.className = "screen on";
     els.roundLabel.textContent = "Round " + (state.round + 1) + " of " + CONFIG.rounds;
     els.gBig.textContent = "Wait for green";
-    els.gSub.textContent = "Don’t tap yet";
+    els.gSub.textContent = MSG.wait();
+    els.gHint.textContent = "";
     drawDots();
     show("game");
     els.game.classList.add("on");
@@ -295,6 +733,7 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
     els.gBig.textContent = "TAP!";
     els.gSub.textContent = "";
     state.goAt = performance.now();
+    sfx("go");
   }
 
   function falseStart() {
@@ -302,13 +741,16 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
     state.phase = "false";
     els.game.classList.add("false");
     els.gBig.textContent = "Too soon";
-    els.gSub.textContent = "You tapped before green. Tap to retry this round.";
+    els.gSub.textContent = MSG.early();
+    els.gHint.textContent = "Tap anywhere to retry this round.";
+    sfx("early");
   }
 
   function handleTap(e) {
     if (e && e.type === "keydown" && e.code !== "Space") return;
     if (e && e.preventDefault) e.preventDefault();
     var now = performance.now();
+    if (rush.on) { rushTap(now); return; }
     if (state.phase === "waiting") { falseStart(); }
     else if (state.phase === "go") { recordResult(Math.round(now - state.goAt)); }
     else if (state.phase === "false") { setTimeout(nextRound, 0); state.phase = "starting"; }
@@ -321,7 +763,11 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
     var last = state.round >= CONFIG.rounds;
     els.rLabel.textContent = "Round " + state.round + " of " + CONFIG.rounds;
     els.rMs.textContent = ms;
-    els.rVerdict.textContent = verdict(ms);
+    var tr = tier(ms);
+    els.rVerdict.textContent = MSG.r[tr]();
+    if (ms < 200) unlock("quick");
+    if (tr === 0) confetti(14);
+    sfx("tap");
     els.chips.innerHTML = state.times.map(function (t, i) {
       return '<span class="chip' + (i === state.times.length - 1 ? " now" : "") + '">R' + (i + 1) + " · " + t + "</span>";
     }).join("");
@@ -337,6 +783,10 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
     var best = getBest();
     var isNew = best === null || avg < best;
     if (isNew) { store.set(CONFIG.bestKey, String(avg)); }
+    els.fMsg.textContent = isNew ? (best === null ? "First record set! Now try to beat it." : MSG.pb()) : MSG.f[tier(avg)]();
+    if (isNew) { confetti(26); sfx("win"); }
+    if (isNew && best !== null) unlock("record");
+    unlock("first");
     var fastest = Math.min.apply(null, state.times);
     var slowest = Math.max.apply(null, state.times);
     els.fFast.textContent = fastest;
@@ -351,55 +801,331 @@ h1{margin:0;font-size:clamp(46px,16vw,76px);font-weight:800;letter-spacing:-.04e
     show("final");
   }
 
+  /* ---------- Memory Match ---------- */
+  var MEM = {
+    symbols: ["★", "♥", "♦", "♣", "●", "▲", "■", "✚"],
+    names: ["star", "heart", "diamond", "club", "circle", "triangle", "square", "plus"],
+    mismatchMs: 750, doneDelayMs: 650
+  };
+  var mem = { cards: [], first: -1, lock: false, done: false, started: false, moves: 0, matched: 0,
+              t0: 0, elapsed: 0, tick: null, flipTimer: null, token: 0 };
+
+  function fmtTime(ms) {
+    var s = Math.floor(ms / 1000), r = s % 60;
+    return Math.floor(s / 60) + ":" + (r < 10 ? "0" : "") + r;
+  }
+  function getMemBest() {
+    try {
+      var r = JSON.parse(store.get(CONFIG.memKey));
+      if (r && isFinite(r.moves) && isFinite(r.ms)) return r;
+    } catch (e) {}
+    return null;
+  }
+
+  /* Cancels every timer and invalidates any queued card action (token check). */
+  function memStop() {
+    clearInterval(mem.tick); clearTimeout(mem.flipTimer);
+    mem.tick = null; mem.flipTimer = null; mem.lock = false; mem.token++;
+  }
+
+  function memNew() {
+    memStop();
+    var deck = [], i, j, t;
+    for (i = 0; i < MEM.symbols.length; i++) deck.push(i, i);
+    for (i = deck.length - 1; i > 0; i--) { j = Math.floor(Math.random() * (i + 1)); t = deck[i]; deck[i] = deck[j]; deck[j] = t; }
+    mem.cards = deck.map(function (s) { return { sym: s, up: false, ok: false }; });
+    mem.first = -1; mem.done = false; mem.started = false; mem.moves = 0; mem.matched = 0; mem.elapsed = 0;
+    els.mMoves.textContent = "0"; els.mTime.textContent = "0:00";
+    els.mBoard.innerHTML = mem.cards.map(function (c, n) {
+      return '<button class="mc k' + c.sym + '" type="button" aria-label="Card ' + (n + 1) + ', face down"><span class="mf">' + MEM.symbols[c.sym] + "</span></button>";
+    }).join("");
+  }
+
+  function memPaint(i) {
+    var c = mem.cards[i], b = els.mBoard.children[i];
+    if (!b) return;
+    b.className = "mc k" + c.sym + (c.ok ? " ok" : c.up ? " up" : "");
+    b.setAttribute("aria-label", (c.up || c.ok) ? MEM.names[c.sym] + (c.ok ? ", matched" : "") : "Card " + (i + 1) + ", face down");
+  }
+
+  function memTick() { els.mTime.textContent = fmtTime(performance.now() - mem.t0); }
+
+  function memTap(i) {
+    if (view !== "memory" || mem.lock || mem.done) return;   /* lock = two unmatched cards being checked */
+    var c = mem.cards[i];
+    if (!c || c.up || c.ok) return;
+    if (!mem.started) { mem.started = true; mem.t0 = performance.now(); mem.tick = setInterval(memTick, 250); }
+    c.up = true; memPaint(i); sfx("flip");
+    if (mem.first < 0) { mem.first = i; return; }
+    var j = mem.first, a = mem.cards[j];
+    mem.first = -1; mem.moves++; els.mMoves.textContent = mem.moves;
+    if (a.sym === c.sym) {
+      a.ok = c.ok = true; mem.matched++; memPaint(j); memPaint(i); sfx("match");
+      if (mem.matched === MEM.symbols.length) memFinish();
+    } else {
+      mem.lock = true; sfx("miss");
+      var tok = mem.token;
+      mem.flipTimer = setTimeout(function () {
+        if (tok !== mem.token) return;                        /* left the game: do nothing */
+        a.up = c.up = false; memPaint(j); memPaint(i);
+        mem.lock = false; mem.flipTimer = null;
+      }, MEM.mismatchMs);
+    }
+  }
+
+  function memFinish() {
+    mem.done = true;
+    clearInterval(mem.tick); mem.tick = null;
+    mem.elapsed = Math.round(performance.now() - mem.t0);
+    els.mTime.textContent = fmtTime(mem.elapsed);
+    var tok = mem.token;
+    mem.flipTimer = setTimeout(function () {
+      if (tok !== mem.token) return;
+      mem.flipTimer = null; memShowDone();
+    }, MEM.doneDelayMs);
+  }
+
+  function memShowDone() {
+    var prev = getMemBest();
+    var isNew = !prev || mem.moves < prev.moves || (mem.moves === prev.moves && mem.elapsed < prev.ms);
+    if (isNew) store.set(CONFIG.memKey, JSON.stringify({ moves: mem.moves, ms: mem.elapsed }));
+    els.dMoves.textContent = mem.moves;
+    els.dTime.textContent = fmtTime(mem.elapsed);
+    els.dBest.textContent = isNew ? mem.moves : prev.moves;
+    els.dBadge.hidden = !isNew;
+    els.dMsg.textContent = MSG.m[mem.moves <= 10 ? 0 : mem.moves <= 14 ? 1 : mem.moves <= 20 ? 2 : 3]();
+    if (isNew && prev) unlock("record");
+    unlock("mem"); unlock("first");
+    if (mem.moves <= 12) unlock("sharp");
+    if (isNew) confetti(26);
+    sfx("win");
+    renderBest();
+    show("memDone");
+  }
+
+  els.mBoard.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest(".mc") : null;
+    if (b) memTap(Array.prototype.indexOf.call(els.mBoard.children, b));
+  });
+  $("mAgain").addEventListener("click", function () { if (view === "memory") { memNew(); show("mem"); } });
+
+  /* ---------- Reaction Rush (endless, 3 lives, blue decoys) ---------- */
+  var rush = { on: false, phase: "", lives: 3, score: 0, streak: 0, maxStreak: 0, rounds: 0, fakes: 0, times: [],
+               fastest: null, left: 0, rd: 0, lv: 0, d0: 0, goAt: 0, timer: null, token: 0 };
+
+  function getRushBest() {
+    try { var r = JSON.parse(store.get(CONFIG.rushKey)); if (r && r.score > 0) return r; } catch (e) {}
+    return null;
+  }
+  /* The only Rush timer. Every schedule bumps the token, so stale callbacks never run. */
+  function rt(fn, ms) {
+    var tok = ++rush.token; clearTimeout(rush.timer);
+    rush.timer = setTimeout(function () { if (tok === rush.token && rush.on) fn(); }, ms);
+  }
+  function rushStop() { document.body.classList.remove("rushmode"); clearTimeout(rush.timer); rush.timer = null; rush.on = false; rush.phase = ""; rush.token++; }
+  function rushLevel() { return Math.min(10, Math.floor(rush.score / 200)); }
+
+  function rushHud() {
+    els.roundLabel.textContent = "Score " + rush.score + " · Streak " + rush.streak;
+    var h = "";
+    for (var i = 0; i < 3; i++) h += '<span class="hp' + (i < rush.lives ? "" : " lost") + '">♥</span>';
+    els.dots.innerHTML = h;
+  }
+  function rushAch() {
+    if (rush.rounds >= 10) unlock("rr10");
+    if (rush.maxStreak >= 5) unlock("rs5");
+    if (rush.fakes >= 5) unlock("rf5");
+    if (rush.score >= 1000) unlock("r1k");
+  }
+
+  function rushStart() {
+    if (view !== "reaction") return;
+    rushStop();
+    rush.on = true; document.body.classList.add("rushmode"); rush.lives = 3; rush.score = 0; rush.streak = 0; rush.maxStreak = 0;
+    rush.rounds = 0; rush.fakes = 0; rush.times = []; rush.fastest = null;
+    rushRound();
+  }
+
+  /* Difficulty rises with score: shorter waits, more decoys, occasional surprise speed rounds.
+     Waits never drop below 600 ms and decoys last at least 550 ms, so every round stays fair. */
+  function rushRound() {
+    clearTimeout(rush.timer);
+    var lv = rushLevel(), n = 0;
+    if (rush.rounds >= 2 && Math.random() < Math.min(.45, .12 + lv * .04)) {
+      n = 1;
+      if (lv >= 3 && Math.random() < Math.min(.3, (lv - 2) * .06)) n = 2;   /* double bluff */
+    }
+    var surge = n === 0 && lv >= 2 && Math.random() < .12;
+    var lo = Math.max(600, 1500 - lv * 90), hi = Math.max(1800, 3800 - lv * 200);
+    rush.lv = lv; rush.left = n; rush.rd = n;
+    rush.d0 = surge ? 600 + Math.random() * 300 : lo + Math.random() * (hi - lo);
+    els.game.className = "screen on";
+    els.gBig.textContent = "Wait for green";
+    els.gSub.textContent = surge ? "Surprise speed round! Stay sharp." : (Math.random() < .5 ? MSG.rw() : MSG.wait());
+    els.gHint.textContent = rush.rounds < 2 ? "Green means tap. Blue is a decoy: don’t tap it!" : "";
+    rushHud();
+    show("game");
+    rushStage(true);
+  }
+  function rushStage(first) {
+    rush.phase = "wait"; els.game.className = "screen on";
+    rt(function () { if (rush.left > 0) rushFake(); else rushGo(); }, first ? rush.d0 : 700 + Math.random() * 900);
+  }
+  function rushFake() {
+    rush.left--; rush.phase = "fake"; els.game.className = "screen on dec";
+    els.gBig.textContent = "TAP!"; els.gSub.textContent = ""; els.gHint.textContent = "";
+    rt(function () {
+      rush.fakes++; rush.score += 25; rushHud(); rushAch(); sfx("match");
+      els.gBig.textContent = "Wait for green"; els.gSub.textContent = MSG.ri(); els.gHint.textContent = "Decoy ignored! +25 bonus";
+      rushStage(false);
+    }, Math.max(550, 900 - rush.lv * 40) + Math.random() * 200);
+  }
+  function rushGo() {
+    rush.phase = "go"; els.game.className = "screen on go";
+    els.gBig.textContent = "TAP!"; els.gSub.textContent = ""; els.gHint.textContent = "";
+    rush.goAt = performance.now(); sfx("go");
+  }
+
+  function rushTap(now) {
+    if (rush.phase === "go") rushHit(Math.round(now - rush.goAt));
+    else if (rush.phase === "wait") rushLose(MSG.re());
+    else if (rush.phase === "fake") rushLose(MSG.rd());      /* "msg" and "over" phases ignore taps */
+  }
+
+  function rushHit(ms) {
+    clearTimeout(rush.timer);
+    rush.phase = "msg"; rush.rounds++; rush.streak++; rush.times.push(ms);
+    if (rush.fastest === null || ms < rush.fastest) rush.fastest = ms;
+    if (rush.streak > rush.maxStreak) rush.maxStreak = rush.streak;
+    var pts = Math.max(20, Math.round((600 - ms) / 4) + 20) + Math.min(rush.streak, 10) * 5;
+    rush.score += pts;
+    var heart = rush.streak % 10 === 0 && rush.lives < 3;
+    if (heart) rush.lives++;
+    els.gBig.textContent = ms + " ms";
+    els.gSub.textContent = rush.rd > 0 ? MSG.rs() : MSG.r[tier(ms)]();
+    if (rush.streak % 5 === 0) {
+      els.gHint.textContent = MSG.rk() + " Streak " + rush.streak + "!" + (heart ? " Life restored!" : "");
+      confetti(18); sfx("win");
+    } else {
+      els.gHint.textContent = "+" + pts + " points · Streak " + rush.streak;
+      sfx("tap");
+    }
+    rushHud(); rushAch();
+    rt(rushRound, 1300);
+  }
+
+  function rushLose(msg) {
+    clearTimeout(rush.timer);
+    rush.phase = "msg"; rush.lives--; rush.streak = 0;
+    els.game.className = "screen on false";
+    els.gBig.textContent = rush.lives > 0 ? "Life lost" : "Out of lives";
+    els.gSub.textContent = msg;
+    els.gHint.textContent = rush.lives > 0 ? rush.lives + (rush.lives === 1 ? " life left" : " lives left") : "";
+    rushHud(); sfx("early");
+    rt(rush.lives > 0 ? rushRound : rushOver, 1500);
+  }
+
+  function rushOver() {
+    rushStop();
+    var prev = getRushBest(), s = rush.score;
+    var isNew = s > 0 && (!prev || s > prev.score);
+    if (s > 0) store.set(CONFIG.rushKey, JSON.stringify({ score: Math.max(s, prev ? prev.score : 0), streak: Math.max(rush.maxStreak, prev && prev.streak ? prev.streak : 0) }));
+    var sum = rush.times.reduce(function (a, b) { return a + b; }, 0), n = rush.times.length;
+    els.oScore.textContent = s;
+    els.oMsg.textContent = isNew ? (prev ? MSG.pb() : "First Rush record set! Now beat it.") : MSG.ro[s < 200 ? 0 : s < 600 ? 1 : s < 1200 ? 2 : 3]();
+    els.oBadge.hidden = !isNew;
+    els.oStreak.textContent = rush.maxStreak; els.oRounds.textContent = rush.rounds; els.oFakes.textContent = rush.fakes;
+    els.oAvg.textContent = n ? Math.round(sum / n) + " ms" : "--";
+    els.oFast.textContent = rush.fastest === null ? "--" : rush.fastest + " ms";
+    els.oBest.textContent = Math.max(s, prev ? prev.score : 0);
+    unlock("rush1"); rushAch();
+    if (isNew) { confetti(26); sfx("win"); }
+    renderBest();
+    show("rushOver");
+  }
+
+  $("startRush").addEventListener("click", rushStart);
+  $("rAgain").addEventListener("click", rushStart);
+  $("rHome").addEventListener("click", function () { goHub(); });
+
   /* ---------- Events ---------- */
   els.game.addEventListener("pointerdown", handleTap);
   document.addEventListener("keydown", function (e) {
-    if (e.code === "Space" && (state.phase === "waiting" || state.phase === "go" || state.phase === "false")) handleTap(e);
+    if (e.code === "Space" && (state.phase === "waiting" || state.phase === "go" || state.phase === "false" || rush.on)) handleTap(e);
   });
   $("start").addEventListener("click", newGame);
   $("again").addEventListener("click", newGame);
   /* ---------- Navigation ----------
-     Two views: "hub" (no hash or #hub) and "reaction" (#reaction).
-     Every Reaction Test screen (intro, round, result, final) shares ONE history entry,
-     so Back from any of them lands on the hub. Play pushes exactly one entry; leaving
-     either undoes that entry (history.back) or replaces it, so entries never pile up. */
+     Three views: "hub" (no hash or #hub), "reaction" (#reaction) and "memory" (#memory).
+     Every screen of a game (intro, round, result, board, completion) shares ONE history
+     entry, so Back from any of them lands on the hub. Play pushes exactly one entry; leaving
+     either undoes that entry (history.back) or replaces it, so entries never pile up.
+     Entering the hub or switching view stops all game timers (Reaction and Memory Match). */
   var view = "";
-  function targetView() { return window.location.hash === "#reaction" ? "reaction" : "hub"; }
+  var ROUTES = { "#reaction": "reaction", "#memory": "memory" };
+  function targetView() { return ROUTES[window.location.hash] || "hub"; }
   function applyView(force) {
+    setTab();
     var next = targetView();
     if (next === view && !force) return;      /* idempotent: popstate + hashchange may both fire */
     view = next;
     clearTimeout(state.timer);                /* Back mid-round cancels the pending green signal */
     state.phase = "home";
+    memStop();                                /* ...and any Memory Match timer or queued flip */
+    clearFx();                                /* ...and any celebration still falling */
+    rushStop();                               /* ...and the Reaction Rush timer */
     renderBest();
-    show(view === "reaction" ? "home" : "hub");
+    if (view === "reaction") show("home");
+    else if (view === "memory") { memNew(); show("mem"); }
+    else show("hub");
   }
-  function openReaction() {
-    if (view === "reaction") return;          /* ignore double taps */
-    try { window.history.pushState({ qt: "reaction" }, "", "#reaction"); applyView(); }
-    catch (e) { window.location.hash = "#reaction"; }
+  function openGame(name) {
+    if (view !== "hub") return;               /* ignore double taps */
+    try { window.history.pushState({ qt: name }, "", "#" + name); applyView(); }
+    catch (e) { window.location.hash = "#" + name; }
   }
   function goHub() {
-    if (view !== "reaction") return;
-    if (window.history.state && window.history.state.qt === "reaction") {
+    if (view === "hub") return;
+    if (window.history.state && window.history.state.qt === view) {
       window.history.back();                  /* undo our own push; popstate shows the hub */
-    } else {                                  /* opened directly on #reaction: no hub entry behind it */
+    } else {                                  /* opened directly on a game: no hub entry behind it */
       try { window.history.replaceState({ qt: "hub" }, "", "#hub"); applyView(); }
       catch (e) { window.location.replace("#hub"); }
     }
   }
   window.addEventListener("popstate", function () { applyView(); });
   window.addEventListener("hashchange", function () { applyView(); });
-  $("playReaction").addEventListener("click", openReaction);
+  $("playReaction").addEventListener("click", function () { openGame("reaction"); });
+  $("playMemory").addEventListener("click", function () { openGame("memory"); });
   $("back").addEventListener("click", goHub);
   $("toHome").addEventListener("click", goHub);
+  $("mBack").addEventListener("click", goHub);
+  $("mHome").addEventListener("click", goHub);
   els.next.addEventListener("click", function () {
     if (state.round >= CONFIG.rounds) showFinal(); else nextRound();
   });
   document.addEventListener("visibilitychange", function () {
     if (document.hidden && state.phase === "waiting") nextRound();
+    if (document.hidden && rush.on && (rush.phase === "wait" || rush.phase === "fake" || rush.phase === "go")) rushRound();
   });
 
+  /* Platform tabs: each tab is a hash route, so Back and forward move between tabs. */
+  var TABS = { "#games": "games", "#records": "records", "#achievements": "achievements" };
+  function setTab() {
+    var t = TABS[window.location.hash] || "home", i, p = document.querySelectorAll(".pane"), n = document.querySelectorAll(".nv");
+    for (i = 0; i < p.length; i++) p[i].classList.toggle("on", p[i].getAttribute("data-pane") === t);
+    for (i = 0; i < n.length; i++) n[i].classList.toggle("on", (TABS["#" + n[i].getAttribute("data-tab")] || "home") === t);
+    var ps = document.querySelector(".panes"); if (ps) ps.scrollTop = 0;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-tab]"), function (b) {
+    b.addEventListener("click", function () {
+      var h = "#" + b.getAttribute("data-tab");
+      if ((TABS[h] || "home") !== (TABS[window.location.hash] || "home")) window.location.hash = h;
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-g]"), function (b) {
+    b.addEventListener("click", function () { openGame(b.getAttribute("data-g")); });
+  });
   applyView(true);
 })();
 </script>
